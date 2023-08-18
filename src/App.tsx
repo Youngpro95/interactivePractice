@@ -26,23 +26,38 @@ function App() {
       handleCanvasResize();
 
       let x = canvas.width / 2;
-      let y = canvas.height - 30;
+      let y = canvas.height - 50;
+      let radius = 70;
 
-      const dx = 0;
-      const dy = -2;
+      let dx = -3;
+      let dy = -10;
 
-      const draw = () => {
-        context.clearRect(0, 0, canvas.width, canvas.height);
+      const drawBall = () => {
         context.beginPath();
-        context.arc(x, y, 20, 0, Math.PI * 2);
+        context.arc(x, y, radius, 0, Math.PI * 2);
         context.fillStyle = "silver";
         context.fill();
         context.closePath();
+      };
+      const draw = () => {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (x + dx > canvas.width - radius || x + dx < radius) {
+          dx = -dx;
+        }
+        if (y + dy > canvas.height - radius || y + dy < radius) {
+          dy = -dy;
+        }
+
+        drawBall();
 
         x += dx;
         y += dy;
       };
-      setInterval(draw, 50);
+
+      x += dx;
+      y += dy;
+      setInterval(draw, 10);
     }
     return function () {
       window.removeEventListener("resize", handleCanvasResize);
@@ -72,3 +87,5 @@ const Canvas = styled.canvas`
 
 // 0817 resizeEvent를 이용해서 canvas에 width 와 height 를 주입해서 시도해보았으나 잘 안되었음
 // 추후 다시 시도해볼것
+
+// 0818 canvas width height 를 기준으로 벽 식별 및 방향 전환
