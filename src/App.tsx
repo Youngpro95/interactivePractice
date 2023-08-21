@@ -5,76 +5,74 @@ import useResizeEvent from "./components/useResize";
 import styled from "@emotion/styled";
 
 function App() {
-  const panelRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [size, setSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
-  const dimensions = useResizeEvent(panelRef, 100);
-  useEffect(() => {
-    setSize({ w: dimensions?.width || 0, h: dimensions?.height || 0 });
-  }, [dimensions]);
-  const handleCanvasResize = () => {
-    const canvas = canvasRef.current as HTMLCanvasElement;
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [pressedKeys, setPressedKeys] = useState<Record<string, boolean>>({});
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  };
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      setPressedKeys((prevKeys) => ({
+        ...prevKeys,
+        [event.key]: true,
+      }));
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      setPressedKeys((prevKeys) => ({
+        ...prevKeys,
+        [event.key]: false,
+      }));
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
+
   useEffect(() => {
     if (canvasRef.current) {
       const canvas = canvasRef.current;
-      const context = canvasRef.current.getContext("2d") as CanvasRenderingContext2D;
-      window.addEventListener("resize", handleCanvasResize);
-      handleCanvasResize();
+      const context = canvas.getContext("2d");
 
-      let x = canvas.width / 2;
-      let y = canvas.height - 50;
-      let radius = 70;
+      if (context) {
+        const radius = 20;
+        let x = canvas.width / 2;
+        let y = canvas.height - radius;
 
-      let dx = -3;
-      let dy = -10;
+        const drawBall = () => {
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.beginPath();
+          context.arc(x, y, radius, 0, Math.PI * 2);
+          context.fillStyle = "silver";
+          context.fill();
+          context.closePath();
+        };
 
-      const drawBall = () => {
-        context.beginPath();
-        context.arc(x, y, radius, 0, Math.PI * 2);
-        context.fillStyle = "silver";
-        context.fill();
-        context.closePath();
-      };
-      const draw = () => {
-        context.clearRect(0, 0, canvas.width, canvas.height);
+        const animate = () => {
+          if (pressedKeys["w"]) y -= 1;
+          if (pressedKeys["a"]) x -= 1;
+          if (pressedKeys["s"]) y += 1;
+          if (pressedKeys["d"]) x += 1;
 
-        if (x + dx > canvas.width - radius || x + dx < radius) {
-          dx = -dx;
-        }
-        if (y + dy > canvas.height - radius || y + dy < radius) {
-          dy = -dy;
-        }
+          drawBall();
+          requestAnimationFrame(animate);
+        };
 
-        drawBall();
-
-        x += dx;
-        y += dy;
-      };
-
-      x += dx;
-      y += dy;
-      setInterval(draw, 10);
+        animate();
+      }
     }
-    return function () {
-      window.removeEventListener("resize", handleCanvasResize);
-    };
-  }, [canvasRef]);
+  }, [pressedKeys]);
 
   return (
-    <div ref={panelRef} style={{ height: "100vh", backgroundColor: "salmon" }}>
-      <Canvas ref={canvasRef}>
-        {/* <OrbitControls autoRotate={true} />
-        <mesh>
-          <ambientLight intensity={1} />
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial attach="material" color={"lightskyblue"} />
-        </mesh> */}
-      </Canvas>
-    </div>
+    <canvas
+      ref={canvasRef}
+      style={{ display: "block", background: "black" }}
+      width={window.innerWidth}
+      height={window.innerHeight}
+    />
   );
 }
 
@@ -84,7 +82,6 @@ const Canvas = styled.canvas`
   display: block;
   background-color: black;
 `;
-
 // 0817 resizeEvent를 이용해서 canvas에 width 와 height 를 주입해서 시도해보았으나 잘 안되었음
 // 추후 다시 시도해볼것
 
